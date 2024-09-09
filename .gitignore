@@ -1,0 +1,15 @@
+coverage
+*.log
+
+.yarn-integrity
+node_modules
+yarn-error.log
+
+.parcel-cache
+
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

@@ -1,0 +1,54 @@
+name: Publish If Not Exists
+description: Publishes a local package if it doesn't already exist on NPM Registry
+
+inputs:
+  path:
+    description: Path to the package to publish
+    required: true
+
+  token:
+    description: NPM access token
+    required: true
+
+  package_manager:
+    description: Package manager to use for publishing. Can be 'npm' or 'pnpm'
+    required: false
+    default: 'npm'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install JQ
+      shell: bash
+      run: sudo apt-get install jq
+    - name: Login
+      shell: bash
+      run: |
+        echo "//registry.npmjs.org/:_authToken=${{ inputs.token }}" > ~/.npmrc
+    - name: Publish
+      shell: bash
+      run: |
+        file_content=$(cat ${{ inputs.path }}/package.json)
+
+        name=$(echo $file_content | jq -r ".name")
+        version=$(echo $file_content | jq -r ".version")
+
+        echo "name: $name"
+        echo "version: $version"
+
+        package_ref="$name@$version"
+
+        if [[ "${{ inputs.package_manager }}" != "pnpm" && "${{ inputs.package_manager }}" != "npm" ]]; then
+          echo "Unsupported package manager: ${{ inputs.package_manager }}"
+          exit 1
+        fi
+        
+        if npm view $package_ref > /dev/null 2>&1 ; then
+          echo "Package $package_ref already published"
+          exit 0
+        fi
+
+
+        echo "Publishing version $package_ref"
+        echo "Using ${{ inputs.package_manager }} as package manager"
+        cd ${{ inputs.path }} && ${{ inputs.package_manager }} publish --access public
